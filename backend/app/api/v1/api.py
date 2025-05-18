@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import users, auth, schedule_templates, driver_preferences, schedule_generation, swap_requests, admin
+from app.api.v1.endpoints import users, auth, schedule_templates, driver_preferences, schedule_generation, swap_requests, admin, student, statistics
 
 api_router = APIRouter()
 
@@ -10,3 +10,5 @@ api_router.include_router(driver_preferences.router, prefix="/parent", tags=["pa
 api_router.include_router(schedule_generation.router, prefix="/admin", tags=["admin-scheduling"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(swap_requests.router, prefix="/swap-requests", tags=["swap-requests"])
+api_router.include_router(student.router, prefix="/student", tags=["student"])
+api_router.include_router(statistics.router, prefix="/statistics", tags=["statistics"])

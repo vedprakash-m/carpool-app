@@ -58,7 +58,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-      - name: Set up Azure CLI
+    
+    - name: Set up Azure CLI
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
@@ -68,11 +69,6 @@ jobs:
       with:
         app-name: carpool-app-api
         package: ./backend
-        
-    - name: Set up Azure Application Insights
-      run: |
-        az extension add -n application-insights
-        az monitor app-insights component create --app carpool-app-insights --location eastus --resource-group carpool-app-rg
         
     - name: Set up Azure Application Insights
       run: |

@@ -223,3 +223,15 @@ export const swapRequests = {
     });
   },
 };
+
+export const student = {
+  getRides: async (weekStartDate: string) => {
+    return fetchApi(`/student/rides?week_start_date=${weekStartDate}`);
+  },
+};
+
+export const statistics = {
+  getCarpoolStats: async (timeframe: string = 'month') => {
+    return fetchApi(`/statistics/carpool?timeframe=${timeframe}`);
+  },
+};

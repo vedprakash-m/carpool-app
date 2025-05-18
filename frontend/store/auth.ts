@@ -21,6 +21,7 @@ interface AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  setUser: (user: any) => void;
 }
 
 type AuthStoreActions = {
@@ -29,12 +30,15 @@ type AuthStoreActions = {
 };
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set: (state: Partial<AuthState>) => void, get: () => AuthState) => ({
+  persist(    (set: (state: Partial<AuthState>) => void, get: () => AuthState) => ({
       token: null,
       user: null,
       isLoading: false,
       error: null,
+      
+      setUser: (user: any) => {
+        set({ user });
+      },
 
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true, error: null });

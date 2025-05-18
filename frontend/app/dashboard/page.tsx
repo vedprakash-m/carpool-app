@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../store/auth';
 import { UserRole } from '../../types';
 
@@ -27,22 +28,37 @@ export default function DashboardPage() {
           Welcome to the Carpool Management App
         </p>
       </div>
-      <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-        {user.role === UserRole.ADMIN && (
+      <div className="border-t border-gray-200 px-4 py-5 sm:p-6">        {user.role === UserRole.ADMIN && (
           <div className="space-y-4">
             <h3 className="text-md font-medium text-gray-900">Admin Quick Links</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div 
+                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                onClick={() => router.push('/dashboard/users/create')}
+              >
                 <h4 className="font-medium">Create New User</h4>
                 <p className="text-sm text-gray-500">Add a new parent or student to the system</p>
               </div>
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+              <div 
+                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                onClick={() => router.push('/dashboard/templates')}
+              >
                 <h4 className="font-medium">Manage Schedule Templates</h4>
                 <p className="text-sm text-gray-500">Configure recurring carpool schedule templates</p>
               </div>
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+              <div 
+                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                onClick={() => router.push('/dashboard/generate')}
+              >
                 <h4 className="font-medium">Generate Weekly Schedule</h4>
                 <p className="text-sm text-gray-500">Create carpool assignments based on preferences</p>
+              </div>
+              <div 
+                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                onClick={() => router.push('/dashboard/statistics')}
+              >
+                <h4 className="font-medium">Carpool Statistics</h4>
+                <p className="text-sm text-gray-500">View data visualization of carpool activities</p>
               </div>
             </div>
           </div>
@@ -66,17 +82,21 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        )}
-
-        {user.role === UserRole.STUDENT && (
+        )}        {user.role === UserRole.STUDENT && (
           <div className="space-y-4">
             <h3 className="text-md font-medium text-gray-900">Student Dashboard</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+              <div 
+                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                onClick={() => router.push('/dashboard/student/rides')}
+              >
                 <h4 className="font-medium">View Schedule</h4>
                 <p className="text-sm text-gray-500">Check your upcoming carpool schedule</p>
               </div>
-              <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+              <div 
+                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                onClick={() => router.push('/dashboard/profile')}
+              >
                 <h4 className="font-medium">Update Profile</h4>
                 <p className="text-sm text-gray-500">Update your profile information</p>
               </div>
