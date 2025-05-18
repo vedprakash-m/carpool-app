@@ -22,15 +22,15 @@ class Settings(BaseSettings):
     AZURE_TENANT_ID: Optional[str] = None
     AZURE_CLIENT_ID: Optional[str] = None
     AZURE_CLIENT_SECRET: Optional[str] = None
-    
-    # Email Configuration (for future use)
+      # Email Configuration
+    EMAIL_NOTIFICATIONS_ENABLED: bool = False  # Set to True to enable email notifications
     SMTP_TLS: bool = True
-    SMTP_PORT: Optional[int] = None
-    SMTP_HOST: Optional[str] = None
-    SMTP_USER: Optional[str] = None
-    SMTP_PASSWORD: Optional[str] = None
-    EMAILS_FROM_EMAIL: Optional[str] = None
-    EMAILS_FROM_NAME: Optional[str] = None
+    SMTP_SERVER: Optional[str] = None  # SMTP server hostname
+    SMTP_PORT: Optional[int] = 587  # Default SMTP port with TLS
+    SMTP_USERNAME: Optional[str] = None  # SMTP username
+    SMTP_PASSWORD: Optional[str] = None  # SMTP password
+    FROM_EMAIL: Optional[str] = None  # Sender email address
+    FROM_NAME: Optional[str] = "Carpool Management System"  # Sender name
 
     class Config:
         case_sensitive = True

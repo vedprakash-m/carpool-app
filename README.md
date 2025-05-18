@@ -11,6 +11,7 @@ A comprehensive full-stack web application for managing school carpools with sup
 - **Driver Preferences**: Parents can submit weekly availability preferences with constraints
 - **Automated Schedule Generation**: Algorithm generates schedules based on preferences and historical fairness
 - **Swap Requests**: Parents can request schedule swaps with other drivers
+- **Email Notifications**: Automated email alerts for swap requests and responses
 - **Student Views**: Students can view their upcoming rides and drivers
 - **Data Visualization**: Admin dashboard with carpool statistics and visualizations
 - **Mobile-first Design**: Responsive UI optimized for all screen sizes
@@ -213,6 +214,15 @@ pip install -r requirements.txt
 COSMOS_ENDPOINT=your_cosmos_db_endpoint
 COSMOS_KEY=your_cosmos_db_key
 JWT_SECRET_KEY=your_secure_jwt_secret
+
+# Email Configuration (Optional)
+EMAIL_NOTIFICATIONS_ENABLED=True
+SMTP_SERVER=your_smtp_server
+SMTP_PORT=587
+SMTP_USERNAME=your_email@example.com
+SMTP_PASSWORD=your_email_password
+FROM_EMAIL=noreply@example.com
+FROM_NAME="Carpool Management System"
 ```
 
 6. Run the development server:
@@ -257,6 +267,8 @@ API documentation is available at:
 │   │   ├── db/           # Database connections and models
 │   │   ├── models/       # Pydantic models
 │   │   └── services/     # Business logic services
+│   │       ├── email_service.py   # Email notification service
+│   │       └── schedule_generator.py
 │   ├── .env              # Environment variables (not tracked)
 │   ├── main.py           # Application entry point
 │   └── requirements.txt  # Python dependencies
@@ -289,7 +301,15 @@ API documentation is available at:
 ### Enhanced Swap Requests
 - Parents can now request and manage ride swaps
 - Real-time status updates for pending, accepted, and rejected requests
+- Email notifications for swap request creation and responses
 - Improved notification system
+
+### Email Notification System
+- Automatic notifications when swap requests are created, accepted, or rejected
+- Personalized emails with driver names and ride dates
+- HTML and plain text email formatting for compatibility
+- Error handling to prevent notification failures from disrupting the application flow
+- Configurable SMTP settings for any email provider
 
 ## Deployment
 

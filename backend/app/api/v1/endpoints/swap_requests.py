@@ -6,6 +6,7 @@ import uuid
 from app.core.auth import get_current_user
 from app.db.cosmos import get_container
 from app.models.core import SwapRequest, UserRole
+from app.services.email_service import email_service
 
 router = APIRouter()
 
@@ -93,6 +94,28 @@ async def create_swap_request(
     }
     
     swap_requests_container.create_item(body=swap_request_data)
+    
+    # Send notification to the requested driver
+    try:
+        # Get requesting user's name
+        requesting_user = users_container.read_item(
+            item=current_user["user_id"],
+            partition_key=current_user["user_id"]
+        )
+        
+        # Get ride date from assignment
+        ride_date = datetime.fromisoformat(ride_assignment["date"].replace('Z', '+00:00'))
+        
+        # Send email notification
+        email_service.send_swap_request_created_notification(
+            to_email=requested_user["email"],
+            requester_name=requesting_user["full_name"],
+            ride_date=ride_date
+        )
+    except Exception as e:
+        # Log the error but continue - email notification failure shouldn't break the API
+        print(f"Failed to send swap request notification: {str(e)}")
+    
     return SwapRequest(**swap_request_data)
 
 @router.get("/", response_model=List[SwapRequest])
@@ -198,6 +221,34 @@ async def accept_swap_request(
         body=swap_request
     )
     
+    # Send notification to the requesting driver about the accepted swap
+    try:
+        # Get the user data for both users
+        users_container = get_container("users")
+        requesting_user = users_container.read_item(
+            item=swap_request["requesting_driver_id"],
+            partition_key=swap_request["requesting_driver_id"]
+        )
+        
+        responder_user = users_container.read_item(
+            item=current_user["user_id"],
+            partition_key=current_user["user_id"]
+        )
+        
+        # Get ride date from assignment
+        ride_date = datetime.fromisoformat(ride_assignment["date"].replace('Z', '+00:00'))
+        
+        # Send email notification
+        email_service.send_swap_request_response_notification(
+            to_email=requesting_user["email"],
+            responder_name=responder_user["full_name"],
+            ride_date=ride_date,
+            accepted=True
+        )
+    except Exception as e:
+        # Log the error but continue - email notification failure shouldn't break the API
+        print(f"Failed to send swap request accepted notification: {str(e)}")
+    
     return SwapRequest(**updated_request)
 
 @router.put("/{request_id}/reject", response_model=SwapRequest)
@@ -244,4 +295,39 @@ async def reject_swap_request(
         body=swap_request
     )
     
-    return SwapRequest(**updated_request) 
+    # Send notification to the requesting driver about the rejected swap
+    try:
+        # Get the ride assignment to get the date
+        ride_assignments_container = get_container("ride_assignments")
+        ride_assignment = ride_assignments_container.read_item(
+            item=swap_request["ride_assignment_id"],
+            partition_key=swap_request["ride_assignment_id"]
+        )
+        
+        # Get the user data for both users
+        users_container = get_container("users")
+        requesting_user = users_container.read_item(
+            item=swap_request["requesting_driver_id"],
+            partition_key=swap_request["requesting_driver_id"]
+        )
+        
+        responder_user = users_container.read_item(
+            item=current_user["user_id"],
+            partition_key=current_user["user_id"]
+        )
+        
+        # Get ride date from assignment
+        ride_date = datetime.fromisoformat(ride_assignment["date"].replace('Z', '+00:00'))
+        
+        # Send email notification
+        email_service.send_swap_request_response_notification(
+            to_email=requesting_user["email"],
+            responder_name=responder_user["full_name"],
+            ride_date=ride_date,
+            accepted=False
+        )
+    except Exception as e:
+        # Log the error but continue - email notification failure shouldn't break the API
+        print(f"Failed to send swap request rejected notification: {str(e)}")
+    
+    return SwapRequest(**updated_request)
