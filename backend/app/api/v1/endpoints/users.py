@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime
 import uuid
 
-from app.core.auth import get_current_user, check_admin_role, get_password_hash, verify_password
+from app.core.auth import get_current_user, check_admin_role, get_password_hash, verify_password, validate_password_strength
 from app.db.cosmos import get_container
 from app.models.core import User, UserCreate, UserUpdate, UserPasswordChange
 
@@ -27,11 +27,18 @@ async def create_user(
         parameters=params,
         enable_cross_partition_query=True
     ))
-    
-    if existing_users:
+      if existing_users:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
+        )
+    
+    # Validate password strength
+    is_valid, error_message = validate_password_strength(user_in.initial_password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password is too weak: {error_message}"
         )
     
     user_data = user_in.model_dump(exclude={"initial_password"})
@@ -66,12 +73,19 @@ async def change_password(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    
-    # Verify current password
+      # Verify current password
     if not verify_password(password_change.current_password, user["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect password"
+        )
+    
+    # Validate new password strength
+    is_valid, error_message = validate_password_strength(password_change.new_password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password is too weak: {error_message}"
         )
     
     # Update password

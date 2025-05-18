@@ -158,10 +158,12 @@ A comprehensive carpool management web application for schools, supporting multi
 ## Features
 
 - **User Role Management**: Admin, Parent, and Student roles with appropriate permissions
+- **Enhanced Security**: Strong password validation and security best practices
 - **Schedule Templates**: Create and manage weekly carpool schedule templates
 - **Driver Preferences**: Parents can submit weekly availability preferences
 - **Automated Scheduling**: Algorithm generates schedules based on preferences and historical fairness
 - **Swap Requests**: Parents can request schedule swaps with other drivers
+- **Email Notifications**: Automated email alerts for swap requests and responses
 - **Mobile-First Design**: Responsive UI for all screen sizes
 - **Azure Integration**: Utilizes Azure services for deployment and operation
 
@@ -232,6 +234,27 @@ uvicorn main:app --reload
 
 The API will be available at http://localhost:8000
 
+7. Running tests:
+```bash
+# Run all tests
+python -m pytest
+
+# Run specific tests (e.g., email service tests)
+python -m pytest app/tests/test_email_service.py
+
+# Or use the provided scripts
+# On Linux/Mac:
+./run_email_tests.sh
+# On Windows:
+./run_email_tests.ps1
+```
+
+The test suite includes:
+- Unit tests for email notification functionality
+- Mock tests for SMTP interactions
+- Validation tests for email formatting and content
+- Error handling tests for notification failures
+
 #### Frontend Setup
 
 1. Navigate to the frontend directory:
@@ -287,6 +310,20 @@ API documentation is available at:
 
 ## Recent Feature Updates
 
+### Enhanced User Management and Security
+- Implemented robust password strength validation system
+- Password requirements enforced: minimum 8 characters, uppercase, lowercase, numbers, and special characters
+- Visual password strength indicators in the user interface
+- Backend validation to ensure security compliance
+- Improved user experience with clear feedback on password requirements
+
+### Optimized Scheduling Algorithm
+- Verified and documented the ride scheduling algorithm
+- Prioritization of driver preferences (Preferred, Less-Preferred, Available, Unavailable)
+- Historical fairness-based assignment when multiple options exist
+- Comprehensive analysis and documentation of the scheduling logic
+- Identified areas for future optimization and enhancement
+
 ### Student Ride Views
 - Students can now view their upcoming carpool schedules
 - Mobile-friendly design with day-by-day visualization
@@ -310,6 +347,7 @@ API documentation is available at:
 - HTML and plain text email formatting for compatibility
 - Error handling to prevent notification failures from disrupting the application flow
 - Configurable SMTP settings for any email provider
+- Comprehensive unit tests to ensure reliability
 
 ## Deployment
 

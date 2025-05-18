@@ -144,8 +144,7 @@ export default function CreateUserPage() {
               <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
             )}
           </div>
-          
-          <div>
+            <div>
             <label htmlFor="initial_password" className="block text-sm font-medium text-gray-700">
               Initial Password
             </label>
@@ -158,12 +157,21 @@ export default function CreateUserPage() {
                 minLength: {
                   value: 8,
                   message: 'Password must be at least 8 characters'
+                },
+                validate: {
+                  hasUpperCase: value => /[A-Z]/.test(value) || 'Password must contain at least 1 uppercase letter',
+                  hasLowerCase: value => /[a-z]/.test(value) || 'Password must contain at least 1 lowercase letter',
+                  hasNumber: value => /[0-9]/.test(value) || 'Password must contain at least 1 number',
+                  hasSpecialChar: value => /[^A-Za-z0-9]/.test(value) || 'Password must contain at least 1 special character'
                 }
               })}
             />
             {errors.initial_password && (
               <p className="mt-1 text-sm text-red-600">{errors.initial_password.message}</p>
             )}
+            <div className="mt-1 text-xs text-gray-500">
+              Password must be at least 8 characters and include uppercase and lowercase letters, numbers, and special characters.
+            </div>
           </div>
           
           <div>

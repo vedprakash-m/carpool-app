@@ -106,8 +106,7 @@ export default function ChangePasswordPage() {
           <div>
             <label htmlFor="new_password" className="block text-sm font-medium text-gray-700">
               New Password
-            </label>
-            <input
+            </label>            <input
               type="password"
               id="new_password"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -116,12 +115,31 @@ export default function ChangePasswordPage() {
                 minLength: {
                   value: 8,
                   message: 'Password must be at least 8 characters'
+                },
+                validate: {
+                  hasUpperCase: value => /[A-Z]/.test(value) || 'Password must contain at least 1 uppercase letter',
+                  hasLowerCase: value => /[a-z]/.test(value) || 'Password must contain at least 1 lowercase letter',
+                  hasNumber: value => /[0-9]/.test(value) || 'Password must contain at least 1 number',
+                  hasSpecialChar: value => /[^A-Za-z0-9]/.test(value) || 'Password must contain at least 1 special character'
                 }
               })}
             />
             {errors.new_password && (
               <p className="mt-1 text-sm text-red-600">{errors.new_password.message}</p>
             )}
+            <div className="mt-2">
+              <div className="text-xs text-gray-500 mb-1">Password strength:</div>
+              <div className="flex space-x-1">
+                <div className={`h-1 w-1/4 rounded ${newPassword?.length >= 8 ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                <div className={`h-1 w-1/4 rounded ${/[A-Z]/.test(newPassword || '') ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                <div className={`h-1 w-1/4 rounded ${/[a-z]/.test(newPassword || '') ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                <div className={`h-1 w-1/4 rounded ${/[0-9]/.test(newPassword || '') ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                <div className={`h-1 w-1/4 rounded ${/[^A-Za-z0-9]/.test(newPassword || '') ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+              </div>
+              <div className="mt-1 text-xs text-gray-500">
+                Password must include: 8+ chars, uppercase, lowercase, number, special character
+              </div>
+            </div>
           </div>
           
           <div>
