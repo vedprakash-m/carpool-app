@@ -16,6 +16,8 @@ A comprehensive full-stack web application for managing school carpools with sup
 - **Data Visualization**: Admin dashboard with carpool statistics and visualizations
 - **Mobile-first Design**: Responsive UI optimized for all screen sizes
 - **Azure Integration**: Built for deployment on Azure services
+- **Comprehensive Testing**: Extensive unit and integration tests for both frontend and backend
+- **CI/CD Pipeline**: Automated testing and deployment with GitHub Actions
 
 ## Tech Stack
 
@@ -348,6 +350,45 @@ API documentation is available at:
 - Error handling to prevent notification failures from disrupting the application flow
 - Configurable SMTP settings for any email provider
 - Comprehensive unit tests to ensure reliability
+
+## Testing
+
+The application includes comprehensive testing for both frontend and backend components:
+
+### Frontend Testing
+- **Component Tests**: Jest and React Testing Library for UI components
+- **API Tests**: Mock-based testing of API client functions
+- **State Management Tests**: Testing Zustand store functionality
+- **Authentication Testing**: Comprehensive tests for login, logout, and token refresh flows
+
+### Backend Testing
+- **API Endpoint Tests**: Testing all FastAPI endpoints 
+- **Authentication Tests**: JWT token generation and validation tests
+- **Data Access Tests**: Mock-based testing of database operations
+- **Email Service Tests**: Testing email notification service
+- **Schedule Generation Tests**: Testing the scheduling algorithm
+
+### Running Tests
+
+#### Frontend Tests
+```bash
+cd frontend
+npm test                  # Run tests
+npm run test:watch        # Run tests in watch mode
+npm run test:coverage     # Generate coverage report
+```
+
+#### Backend Tests
+```bash
+cd backend
+python -m pytest          # Run all tests
+python -m pytest -v       # Verbose test output
+python -m pytest --cov=app # Run tests with coverage
+```
+
+### CI/CD Testing Pipeline
+
+The GitHub Actions workflow in `.github/workflows/ci-cd.yml` automatically runs all tests on every pull request and push to the main branch, ensuring code quality and preventing regressions.
 
 ## Deployment
 

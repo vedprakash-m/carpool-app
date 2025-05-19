@@ -25,10 +25,18 @@ jobs:
           pip install pytest pytest-cov
           pip install -r requirements.txt
       
-      - name: Run tests
+      - name: Run tests with coverage
         run: |
           cd backend
-          python -m pytest --cov=app
+          python -m pytest --cov=app --cov-report=xml --cov-report=html
+      
+      - name: Upload test coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-coverage-report
+          path: |
+            backend/htmlcov
+            backend/coverage.xml
   
   test-frontend:
     runs-on: ubuntu-latest

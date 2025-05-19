@@ -27,7 +27,7 @@ async def create_user(
         parameters=params,
         enable_cross_partition_query=True
     ))
-      if existing_users:
+    if existing_users:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
