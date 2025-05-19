@@ -392,14 +392,160 @@ The GitHub Actions workflow in `.github/workflows/ci-cd.yml` automatically runs 
 
 ## Deployment
 
-This application is designed to deploy to Azure services:
+This application is designed to deploy to Azure services. The GitHub Actions workflow in `.github/workflows/ci-cd.yml` handles automated testing and deployment.
 
-1. Backend: Azure Functions (Consumption Plan) or Azure Container Apps
-2. Frontend: Azure Static Web Apps
-3. Database: Azure Cosmos DB (Serverless)
-4. Secrets: Azure Key Vault
+### Manual Deployment Steps
 
-The GitHub Actions workflow in `.github/workflows/ci-cd.yml` handles automated testing and deployment.
+Below are the Azure CLI commands to set up the required infrastructure:
+
+```powershell
+# Login to Azure
+az login
+
+# Set subscription (if you have multiple)
+az account set --subscription "Your-Subscription-Name"
+
+# Create resource group
+az group create --name carpool-app-rg --location westus2
+
+# Create Cosmos DB account
+az cosmosdb create --name carpool-app-db --resource-group carpool-app-rg --kind GlobalDocumentDB --default-consistency-level Session
+
+# Create database and containers
+az cosmosdb sql database create --account-name carpool-app-db --resource-group carpool-app-rg --name carpooldb
+az cosmosdb sql container create --account-name carpool-app-db --database-name carpooldb --resource-group carpool-app-rg --name users --partition-key-path "/id"
+az cosmosdb sql container create --account-name carpool-app-db --database-name carpooldb --resource-group carpool-app-rg --name ride_assignments --partition-key-path "/id"
+az cosmosdb sql container create --account-name carpool-app-db --database-name carpooldb --resource-group carpool-app-rg --name swap_requests --partition-key-path "/id"
+az cosmosdb sql container create --account-name carpool-app-db --database-name carpooldb --resource-group carpool-app-rg --name schedule_templates --partition-key-path "/id"
+
+# Create Key Vault
+az keyvault create --name carpool-app-vault --resource-group carpool-app-rg --location westus2
+
+# Create a storage account for the function app
+az storage account create --name carpoolstorage --resource-group carpool-app-rg --location westus2 --sku Standard_LRS
+
+# Create Linux-based Function App with Python runtime
+az functionapp create --name carpool-app-api --resource-group carpool-app-rg --os-type Linux --consumption-plan-location westus2 --runtime python --runtime-version 3.12 --storage-account carpoolstorage --functions-version 4
+
+# Create App Service Plan (Note: May need to try different regions if quota issues arise)
+az appservice plan create --name carpool-app-plan --resource-group carpool-app-rg --sku B1 --is-linux --location westus
+
+# Create Web App with Python runtime
+az webapp create --name carpool-app-api --resource-group carpool-app-rg --plan carpool-app-plan --runtime "PYTHON:3.12"
+```
+
+> **Note:** If you encounter quota limitations for certain SKUs in specific regions, try using different Azure regions like `westus`, `eastus`, `centralus`, etc.
+
+### Backend Deployment Options
+
+You have two options for hosting the backend:
+
+1. **Azure Functions**: Serverless model, good for the API endpoints with sporadic traffic
+2. **Azure Web App**: More traditional web hosting, provides more consistent performance
+
+### Frontend Deployment
+
+For the frontend, deploy to Azure Static Web Apps:
+
+```powershell
+# Create Static Web App
+az staticwebapp create --name carpool-app-frontend --resource-group carpool-app-rg --source https://github.com/your-username/carpool-app --location westus2 --branch main --app-location "/frontend" --output-location "out" --api-location ""
+```
+
+### Environment Configuration
+
+1. Set up Key Vault secrets for database connection strings:
+
+```powershell
+# Get Cosmos DB connection string
+$cosmosDbConnectionString = az cosmosdb keys list --name carpool-app-db --resource-group carpool-app-rg --type connection-strings --query "connectionStrings[0].connectionString" -o tsv
+
+# Store connection string in Key Vault
+az keyvault secret set --vault-name carpool-app-vault --name CosmosDbConnectionString --value $cosmosDbConnectionString
+```
+
+2. Configure the Web App to access Key Vault:
+
+```powershell
+# Assign managed identity to the web app
+az webapp identity assign --name carpool-app-api --resource-group carpool-app-rg
+
+# Get the principal ID of the web app
+$principalId = az webapp identity show --name carpool-app-api --resource-group carpool-app-rg --query principalId -o tsv
+
+# Grant the web app access to Key Vault
+az keyvault set-policy --name carpool-app-vault --object-id $principalId --secret-permissions get list
+```
+
+3. Configure application settings:
+
+```powershell
+# Set environment variables for the web app
+az webapp config appsettings set --name carpool-app-api --resource-group carpool-app-rg --settings \
+    KEY_VAULT_NAME=carpool-app-vault \
+    COSMOS_DB_DATABASE=carpooldb \
+    COSMOS_DB_USERS_CONTAINER=users \
+    COSMOS_DB_RIDE_ASSIGNMENTS_CONTAINER=ride_assignments \
+    COSMOS_DB_SWAP_REQUESTS_CONTAINER=swap_requests \
+    COSMOS_DB_SCHEDULE_TEMPLATES_CONTAINER=schedule_templates
+```
+
+### GitHub Actions Configuration
+
+To set up CI/CD with GitHub Actions:
+
+1. Store Azure credentials as GitHub repository secrets:
+
+```powershell
+# Create a service principal
+$sp = az ad sp create-for-rbac --name "carpool-app-cicd" --role contributor --scopes /subscriptions/{subscription-id}/resourceGroups/carpool-app-rg --sdk-auth
+
+# Use the output JSON as your AZURE_CREDENTIALS secret in GitHub repository settings
+echo $sp
+```
+
+2. Add the following secrets in your GitHub repository:
+   - `AZURE_CREDENTIALS`: The JSON output from the service principal creation
+   - `AZURE_STATIC_WEB_APPS_API_TOKEN`: Deploy token from Azure Static Web Apps
+
+### Monitoring Setup
+
+Set up Application Insights for monitoring:
+
+```powershell
+# Create Application Insights
+az monitor app-insights component create --app carpool-app-insights --location westus2 --resource-group carpool-app-rg --kind web
+
+# Get the instrumentation key
+$instrumentationKey = az monitor app-insights component show --app carpool-app-insights --resource-group carpool-app-rg --query instrumentationKey -o tsv
+
+# Configure the web app with the instrumentation key
+az webapp config appsettings set --name carpool-app-api --resource-group carpool-app-rg --settings \
+    APPINSIGHTS_INSTRUMENTATIONKEY=$instrumentationKey
+```
+
+### Post-Deployment Verification
+
+After deploying the application, run these checks to ensure everything is working:
+
+1. Verify database connections
+2. Confirm authentication flows
+3. Test API endpoints
+4. Check frontend-backend integration
+5. Validate email notification service
+6. Test the scheduling algorithm with real data
+
+### Production Considerations
+
+Before going to production:
+
+1. Set up proper SSL certificates
+2. Configure custom domains
+3. Implement backup and disaster recovery strategies
+4. Set up monitoring alerts
+5. Consider scaling options for increased traffic
+6. Implement a proper CORS policy
+7. Review security best practices
 
 ## License
 
