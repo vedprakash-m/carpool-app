@@ -1,4 +1,4 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, UTC
 from typing import Dict, List, Optional, Tuple
 import uuid
 import logging
@@ -369,10 +369,18 @@ class ScheduleGenerator:
                     key=get_driver_score,
                     reverse=True  # Higher score is better
                 )[0]
-                
-                # Determine assignment method
+                  # Determine assignment method
                 assignment_method = AssignmentMethod.PREFERENCE_BASED
-                if all_preferences.get(selected_driver["id"], {}).get(slot_id) is None:
+                
+                # Check if we have multiple drivers with the same preference level
+                if len(preferred_drivers) > 1 and all(
+                    all_preferences.get(d["id"], {}).get(slot_id) == 
+                    all_preferences.get(preferred_drivers[0]["id"], {}).get(slot_id)
+                    for d in preferred_drivers
+                ):
+                    # Multiple drivers with same preference, historical data was the deciding factor
+                    assignment_method = AssignmentMethod.HISTORICAL_BASED
+                elif all_preferences.get(selected_driver["id"], {}).get(slot_id) is None:
                     # No explicit preference was set, using historical data
                     assignment_method = AssignmentMethod.HISTORICAL_BASED
                 
@@ -382,10 +390,9 @@ class ScheduleGenerator:
                     "template_slot_id": slot_id,
                     "driver_parent_id": selected_driver["id"],
                     "assigned_date": assignment_date.isoformat(),
-                    "status": "SCHEDULED",
-                    "assignment_method": assignment_method,
-                    "created_at": datetime.utcnow().isoformat(),
-                    "updated_at": datetime.utcnow().isoformat()
+                    "status": "SCHEDULED",                    "assignment_method": assignment_method,
+                    "created_at": datetime.now(UTC).isoformat(),
+                    "updated_at": datetime.now(UTC).isoformat()
                 }
                 
             logger.warning(f"Could not assign a driver for slot {slot_id} on {assignment_date.isoformat()}")
