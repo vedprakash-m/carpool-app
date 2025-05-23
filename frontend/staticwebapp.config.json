@@ -1,0 +1,32 @@
+name: Carpool Frontend
+
+routes:
+  - route: "/*"
+    serve: "/index.html"
+    statusCode: 200
+    methods: [GET, HEAD, OPTIONS]
+
+navigationFallback:
+  rewrite: "/index.html"
+  exclude: ["*.{css,scss,js,png,gif,ico,jpg,svg}"]
+
+responseOverrides:
+  404: {
+    "statusCode": 200,
+    "rewrite": "/index.html"
+  }
+
+# Enable CORS for the backend API
+cors:
+  allowedOrigins:
+    - https://vcarpool-app-api.azurewebsites.net
+  allowedMethods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowedHeaders:
+    - "*"
+  maxAge: 600
+  allowCredentials: true

@@ -2,6 +2,15 @@
 
 A comprehensive full-stack web application for managing school carpools with support for multiple user roles, automated scheduling, and preference-based ride assignments.
 
+## Latest Updates (May 2025)
+
+- **Enhanced Testing Framework**: Added comprehensive test suite for the scheduling algorithm
+- **Infrastructure as Code**: Implemented Azure Bicep templates for automated deployment
+- **DevOps Improvements**: Added GitHub Actions workflows for CI/CD pipeline
+- **Documentation**: Updated deployment guide and implementation documentation
+- **Performance Optimization**: Improved scheduling algorithm performance for large datasets
+- **Code Quality**: Implemented additional code quality checks and linting
+
 ## Features
 
 - **Multi-role User System**: Admin, Parent, and Student roles with appropriate permissions
@@ -285,26 +294,44 @@ API documentation is available at:
 ## Project Structure
 
 ```
+carpool-app/
 ├── backend/              # FastAPI backend application
 │   ├── app/              # Core application modules
 │   │   ├── api/          # API routes and endpoints
 │   │   ├── core/         # Core functionality (auth, config)
 │   │   ├── db/           # Database connections and models
 │   │   ├── models/       # Pydantic models
-│   │   └── services/     # Business logic services
-│   │       ├── email_service.py   # Email notification service
-│   │       └── schedule_generator.py
+│   │   ├── services/     # Business logic services
+│   │   │   ├── email_service.py   # Email notification service
+│   │   │   └── schedule_generator.py # Scheduling algorithm
+│   │   └── tests/        # Comprehensive test suite
+│   │       ├── test_auth.py
+│   │       ├── test_email_service.py
+│   │       ├── test_schedule_generator_comprehensive.py
+│   │       ├── test_schedule_generator_unit.py
+│   │       └── ...
 │   ├── .env              # Environment variables (not tracked)
 │   ├── main.py           # Application entry point
-│   └── requirements.txt  # Python dependencies
+│   ├── requirements.txt  # Python dependencies
+│   └── run_schedule_tests.ps1 # Convenience script for running tests
 │
 ├── frontend/             # Next.js frontend application
 │   ├── app/              # Next.js app folder structure
 │   │   ├── dashboard/    # Dashboard pages
 │   │   └── login/        # Authentication pages
+│   ├── __tests__/        # Frontend tests
 │   ├── lib/              # Shared utilities and API client
 │   ├── store/            # State management with Zustand
 │   └── types/            # TypeScript type definitions
+│
+├── devops/               # DevOps documentation and scripts
+│   ├── ci_cd_setup.md
+│   └── ...
+│
+├── infra/                # Infrastructure as Code
+│   ├── deploy.ps1        # Deployment script
+│   ├── main.bicep        # Azure Bicep templates
+│   └── ...
 │
 └── .github/              # GitHub configuration
     └── workflows/        # CI/CD workflows
@@ -324,7 +351,13 @@ API documentation is available at:
 - Prioritization of driver preferences (Preferred, Less-Preferred, Available, Unavailable)
 - Historical fairness-based assignment when multiple options exist
 - Comprehensive analysis and documentation of the scheduling logic
-- Identified areas for future optimization and enhancement
+- Enhanced algorithm with improved conflict resolution strategies
+- Added comprehensive test suite to verify all aspects of the scheduling system:
+  - Balanced preferences handling
+  - Conflicting preferences resolution
+  - Historical fairness calculations
+  - Edge case management
+- Improved performance for large schedule generation tasks
 
 ### Student Ride Views
 - Students can now view their upcoming carpool schedules
@@ -366,7 +399,11 @@ The application includes comprehensive testing for both frontend and backend com
 - **Authentication Tests**: JWT token generation and validation tests
 - **Data Access Tests**: Mock-based testing of database operations
 - **Email Service Tests**: Testing email notification service
-- **Schedule Generation Tests**: Testing the scheduling algorithm
+- **Schedule Generation Tests**: Comprehensive testing of the scheduling algorithm including:
+  - **Balanced Preferences**: Tests scenarios with balanced driver preferences
+  - **Conflicting Preferences**: Tests handling of multiple drivers requesting the same slots
+  - **Historical Balancing**: Verifies the fairness algorithm that considers past driving assignments
+  - **Edge Cases**: Tests boundary conditions and special scenarios
 
 ### Running Tests
 
@@ -384,19 +421,53 @@ cd backend
 python -m pytest          # Run all tests
 python -m pytest -v       # Verbose test output
 python -m pytest --cov=app # Run tests with coverage
+
+# Run specific comprehensive tests
+python -m pytest app/tests/test_schedule_generator_comprehensive.py -v
+
+# Using convenience scripts
+# On Windows:
+.\run_schedule_tests.ps1
+# On Linux/Mac:
+./run_schedule_tests.sh
 ```
 
 ### CI/CD Testing Pipeline
 
-The GitHub Actions workflow in `.github/workflows/ci-cd.yml` automatically runs all tests on every pull request and push to the main branch, ensuring code quality and preventing regressions.
+The GitHub Actions workflow in `.github/workflows/ci-cd.yml` automatically runs all tests on every pull request and push to the main branch, ensuring code quality and preventing regressions. Additional workflows in `.github/workflows/` handle specific test suites and code quality checks.
 
 ## Deployment
 
 This application is designed to deploy to Azure services. The GitHub Actions workflow in `.github/workflows/ci-cd.yml` handles automated testing and deployment.
 
+### Automated Deployment with Infrastructure as Code
+
+The project now includes infrastructure as code (IaC) using Azure Bicep for automated deployment:
+
+```
+infra/
+├── deploy.ps1                  # PowerShell deployment script
+├── main.bicep                  # Main Bicep template
+├── main.parameters.json        # Parameters for deployment
+├── README.md                   # Deployment documentation
+└── set-key-vault-secrets.ps1   # Script for securing secrets
+```
+
+To deploy using the IaC approach:
+
+```powershell
+# Navigate to the infra directory
+cd infra
+
+# Review and customize the parameters in main.parameters.json if needed
+
+# Run the deployment script
+./deploy.ps1 -resourceGroupName "carpool-app-rg" -location "westus2"
+```
+
 ### Manual Deployment Steps
 
-Below are the Azure CLI commands to set up the required infrastructure:
+If you prefer manual deployment, below are the Azure CLI commands to set up the required infrastructure:
 
 ```powershell
 # Login to Azure
@@ -546,6 +617,8 @@ Before going to production:
 5. Consider scaling options for increased traffic
 6. Implement a proper CORS policy
 7. Review security best practices
+
+For a complete guide on preparing for production deployment, see the [deployment-guide.md](./deployment-guide.md) document.
 
 ## License
 

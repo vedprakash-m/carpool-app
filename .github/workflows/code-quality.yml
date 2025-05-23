@@ -1,0 +1,129 @@
+name: Code Quality Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  BACKEND_PATH: ./backend
+  FRONTEND_PATH: ./frontend
+  NODE_VERSION: '18.x'
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  backend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy
+          pip install -r requirements.txt
+          
+      - name: Check formatting with Black
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          black --check .
+          
+      - name: Sort imports with isort
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          isort --check-only --profile black .
+          
+      - name: Lint with flake8
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --max-complexity=10 --max-line-length=127 --statistics
+          
+      - name: Type check with mypy
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          mypy app
+
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          cd ${{ env.FRONTEND_PATH }}
+          npm ci
+          
+      - name: Lint with ESLint
+        run: |
+          cd ${{ env.FRONTEND_PATH }}
+          if [ -e package.json ] && grep -q "lint" package.json; then
+            npm run lint
+          else
+            echo "No lint script found in package.json, skipping linting"
+          fi
+          
+      - name: Check types with TypeScript
+        run: |
+          cd ${{ env.FRONTEND_PATH }}
+          if [ -e package.json ] && grep -q "tsc" package.json; then
+            npm run tsc
+          elif [ -e package.json ] && grep -q "typecheck" package.json; then
+            npm run typecheck
+          else
+            echo "No type checking script found in package.json, running tsc manually"
+            npx tsc --noEmit
+          fi
+          
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety
+          
+      - name: Scan Python code with Bandit
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          bandit -r app -f json -o bandit-results.json || true
+          
+      - name: Check Python dependencies with Safety
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          safety check -r requirements.txt --full-report || true
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install Node.js dependencies
+        run: |
+          cd ${{ env.FRONTEND_PATH }}
+          npm ci
+          
+      - name: Run npm audit
+        run: |
+          cd ${{ env.FRONTEND_PATH }}
+          npm audit --production || true

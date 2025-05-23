@@ -1,0 +1,246 @@
+name: Carpool App CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+
+env:
+  RESOURCE_PREFIX: vcarpool
+  LOCATION: westus
+  BACKEND_PATH: ./backend
+  FRONTEND_PATH: ./frontend
+  NODE_VERSION: '18.x'
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  validate-infrastructure:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Validate Bicep Template
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            # Get environment from workflow input or use default
+            ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
+            
+            # Resource group name based on prefix and environment
+            RESOURCE_GROUP="${{ env.RESOURCE_PREFIX }}-${ENVIRONMENT}-rg"
+            
+            # Create resource group if it doesn't exist
+            if [ $(az group exists --name $RESOURCE_GROUP) = false ]; then
+              az group create --name $RESOURCE_GROUP --location ${{ env.LOCATION }}
+            fi
+            
+            # Validate the Bicep template
+            az deployment group what-if \
+              --resource-group $RESOURCE_GROUP \
+              --template-file infra/main.bicep \
+              --parameters infra/main.parameters.json environment=$ENVIRONMENT
+
+  build-and-test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Run tests
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          pytest
+        env:
+          # Mock environment variables for testing
+          COSMOS_ENDPOINT: 'mock-endpoint'
+          COSMOS_KEY: 'mock-key'
+          COSMOS_DATABASE: 'mock-db'
+          JWT_SECRET_KEY: 'mock-secret-key'
+
+  build-and-test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          cd ${{ env.FRONTEND_PATH }}
+          npm ci
+          
+      - name: Run tests
+        run: |
+          cd ${{ env.FRONTEND_PATH }}
+          npm test
+
+  deploy-infrastructure:
+    needs: [validate-infrastructure, build-and-test-backend, build-and-test-frontend]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy Azure Infrastructure
+        id: infrastructure
+        uses: azure/arm-deploy@v1
+        with:
+          resourceGroupName: ${{ env.RESOURCE_PREFIX }}-${{ github.event.inputs.environment || 'dev' }}-rg
+          template: ./infra/main.bicep
+          parameters: ./infra/main.parameters.json environment=${{ github.event.inputs.environment || 'dev' }}
+          deploymentName: carpool-app-${{ github.run_number }}
+    
+    outputs:
+      webAppName: ${{ steps.infrastructure.outputs.webAppName }}
+      keyVaultName: ${{ steps.infrastructure.outputs.keyVaultName }}
+      staticWebAppName: ${{ steps.infrastructure.outputs.staticWebAppName }}
+      webAppHostName: ${{ steps.infrastructure.outputs.webAppHostName }}
+      staticWebAppHostName: ${{ steps.infrastructure.outputs.staticWebAppHostName }}
+
+  deploy-backend:
+    needs: [deploy-infrastructure]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Create deployment package
+        run: |
+          cd ${{ env.BACKEND_PATH }}
+          mkdir -p deploy_package
+          cp -r app requirements.txt main.py deploy_package/
+          
+          # Create web.config file for Azure App Service
+          cat > deploy_package/web.config << 'EOL'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <handlers>
+                <add name="PythonHandler" path="*" verb="*" modules="httpPlatformHandler" resourceType="Unspecified" />
+              </handlers>
+              <httpPlatform processPath="%home%\Python\3.12\python.exe" 
+                           arguments="-m uvicorn main:app --host 0.0.0.0 --port %HTTP_PLATFORM_PORT%" 
+                           requestTimeout="00:04:00" 
+                           startupTimeLimit="120" 
+                           startupRetryCount="3" />
+            </system.webServer>
+          </configuration>
+          EOL
+          
+          cd deploy_package
+          zip -r ../backend_deploy.zip ./*
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ needs.deploy-infrastructure.outputs.webAppName }}
+          package: ${{ env.BACKEND_PATH }}/backend_deploy.zip
+      
+      - name: Configure App Settings
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            KEY_VAULT_NAME="${{ needs.deploy-infrastructure.outputs.keyVaultName }}"
+            RESOURCE_GROUP="${{ env.RESOURCE_PREFIX }}-${{ github.event.inputs.environment || 'dev' }}-rg"
+            
+            az webapp config appsettings set \
+              --resource-group $RESOURCE_GROUP \
+              --name ${{ needs.deploy-infrastructure.outputs.webAppName }} \
+              --settings \
+                COSMOS_DATABASE="carpool_db"
+
+  deploy-frontend:
+    needs: [deploy-infrastructure, deploy-backend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies and build
+        run: |
+          cd ${{ env.FRONTEND_PATH }}
+          npm ci
+          
+          # Create .env.production file with backend URL
+          echo "NEXT_PUBLIC_API_URL=https://${{ needs.deploy-infrastructure.outputs.webAppHostName }}/api/v1" > .env.production
+          
+          npm run build
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy to Azure Static Web Apps
+        id: deploy-swa
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: ${{ env.FRONTEND_PATH }}
+          api_location: ""
+          output_location: ".next"
+          skip_app_build: true
+          
+      - name: Output Deployment Results
+        run: |
+          echo "Frontend deployed to: https://${{ needs.deploy-infrastructure.outputs.staticWebAppHostName }}"
+          echo "Backend API available at: https://${{ needs.deploy-infrastructure.outputs.webAppHostName }}/api/v1"

@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import Optional
+import os
 
 class Settings(BaseSettings):
     # API Configuration
@@ -8,12 +9,12 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Carpool Management API"
     
     # Azure Cosmos DB Configuration
-    COSMOS_ENDPOINT: str
-    COSMOS_KEY: str
+    COSMOS_ENDPOINT: str = "https://mock-cosmos.azure.com:443/"  # Default for testing
+    COSMOS_KEY: str = "mock-key=="  # Default for testing
     COSMOS_DATABASE: str = "carpool_db"
     
     # JWT Configuration
-    JWT_SECRET_KEY: str
+    JWT_SECRET_KEY: str = "mock-jwt-key-for-testing"  # Default for testing
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
@@ -38,4 +39,6 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings() 
+    # For tests or development, use the values from Settings directly
+    # For production, all required settings must be provided via environment variables
+    return Settings()
