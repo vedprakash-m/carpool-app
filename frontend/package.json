@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,  "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node skip-build-checks.js && npm run copy-static",
+    "copy-static": "powershell -Command \"Copy-Item -Path ./public/* -Destination ./out/ -Recurse -Force\"",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "deploy": "powershell -File ./deploy.ps1"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",

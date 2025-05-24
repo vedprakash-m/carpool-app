@@ -1,0 +1,21 @@
+# Core dependencies
+fastapi
+uvicorn[standard]
+pydantic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+python-dotenv
+email-validator
+azure-identity
+azure-keyvault-secrets
+azure-cosmos
+opencensus-ext-azure
+
+# Testing dependencies
+pytest
+pytest-cov
+pytest-mock
+pytest-asyncio
+tabulate
+colorama

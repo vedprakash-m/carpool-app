@@ -2,8 +2,15 @@
 
 A comprehensive full-stack web application for managing school carpools with support for multiple user roles, automated scheduling, and preference-based ride assignments.
 
-## Latest Updates (May 2025)
+## Latest Updates (December 2024)
 
+### Azure Function App Configuration Fixes
+- **Function App Deployment Issues Resolved**: Fixed critical configuration issues preventing FastAPI endpoints from being accessible
+- **Azure Functions Configuration**: Updated `function.json`, `host.json`, and added `proxies.json` for proper routing
+- **Diagnostic Tools Created**: Added comprehensive diagnostic and validation scripts for Azure Functions deployment
+- **Deployment Automation**: Created PowerShell scripts for automated Azure Functions deployment with proper configuration
+
+### Recent Technical Improvements
 - **Enhanced Testing Framework**: Added comprehensive test suite for the scheduling algorithm
 - **Infrastructure as Code**: Implemented Azure Bicep templates for automated deployment
 - **DevOps Improvements**: Added GitHub Actions workflows for CI/CD pipeline
@@ -296,6 +303,8 @@ API documentation is available at:
 ```
 carpool-app/
 ├── backend/              # FastAPI backend application
+│   ├── api/              # Azure Functions API configuration
+│   │   └── function.json # Function app configuration
 │   ├── app/              # Core application modules
 │   │   ├── api/          # API routes and endpoints
 │   │   ├── core/         # Core functionality (auth, config)
@@ -310,6 +319,14 @@ carpool-app/
 │   │       ├── test_schedule_generator_comprehensive.py
 │   │       ├── test_schedule_generator_unit.py
 │   │       └── ...
+│   ├── diagnose_function_app.py      # Azure Functions diagnostic tool
+│   ├── fix_azure_function_fastapi.py # Automated configuration fix
+│   ├── simple_validate.py           # Quick deployment validation
+│   ├── test_fastapi_local.py        # Local testing script
+│   ├── validate_deployment.py       # Comprehensive deployment validation
+│   ├── deploy_fixed_function.ps1    # Automated deployment script
+│   ├── host.json         # Azure Functions host configuration
+│   ├── proxies.json      # URL routing configuration
 │   ├── .env              # Environment variables (not tracked)
 │   ├── main.py           # Application entry point
 │   ├── requirements.txt  # Python dependencies
@@ -332,6 +349,8 @@ carpool-app/
 │   ├── deploy.ps1        # Deployment script
 │   ├── main.bicep        # Azure Bicep templates
 │   └── ...
+│
+├── solution_summary.md   # Recent troubleshooting and fixes documentation
 │
 └── .github/              # GitHub configuration
     └── workflows/        # CI/CD workflows
@@ -435,6 +454,68 @@ python -m pytest app/tests/test_schedule_generator_comprehensive.py -v
 ### CI/CD Testing Pipeline
 
 The GitHub Actions workflow in `.github/workflows/ci-cd.yml` automatically runs all tests on every pull request and push to the main branch, ensuring code quality and preventing regressions. Additional workflows in `.github/workflows/` handle specific test suites and code quality checks.
+
+## Azure Function App Deployment
+
+### Recent Configuration Fixes
+
+The application recently resolved critical Azure Function App deployment issues where the FastAPI endpoints were not accessible. The fixes included:
+
+1. **Function Configuration Updates**:
+   - Updated `backend/api/function.json` to point to the correct entry point (`main.py`)
+   - Modified `backend/host.json` to include proper HTTP routing configuration
+   - Added `backend/proxies.json` for root URL routing
+
+2. **Diagnostic and Deployment Tools**:
+   - `backend/diagnose_function_app.py`: Comprehensive diagnostic tool for Function App issues
+   - `backend/fix_azure_function_fastapi.py`: Automated configuration fix script
+   - `backend/simple_validate.py`: Quick validation script for deployment readiness
+   - `backend/test_fastapi_local.py`: Local testing script for FastAPI isolation
+   - `backend/validate_deployment.py`: Detailed deployment validation
+   - `backend/deploy_fixed_function.ps1`: PowerShell script for automated deployment
+
+3. **Key Configuration Changes**:
+   ```json
+   // function.json
+   {
+     "scriptFile": "../main.py",
+     "entryPoint": "main"
+   }
+   
+   // host.json
+   {
+     "extensions": {
+       "http": {
+         "routePrefix": ""
+       }
+     }
+   }
+   
+   // proxies.json
+   {
+     "proxies": {
+       "root": {
+         "matchCondition": { "route": "/" },
+         "backendUri": "https://%WEBSITE_HOSTNAME%/api"
+       }
+     }
+   }
+   ```
+
+### Validation and Deployment
+
+Before deploying to Azure Functions, run the validation scripts:
+
+```bash
+# Quick validation
+python backend/simple_validate.py
+
+# Comprehensive validation
+python backend/validate_deployment.py
+
+# Deploy with fixed configuration
+powershell backend/deploy_fixed_function.ps1
+```
 
 ## Deployment
 

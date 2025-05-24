@@ -1,8 +1,7 @@
 import { AuthResponse, User, UserRole } from '../types';
 
-const API_URL = typeof window !== 'undefined' 
-  ? (window.location.origin + '/api/v1')
-  : 'http://localhost:8000/api/v1';
+// Hardcode the API URL for production
+const API_URL = 'https://vcarpool-dev-api.azurewebsites.net/api/v1';
 
 interface LoginCredentials {
   username: string;

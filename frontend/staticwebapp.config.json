@@ -1,32 +1,47 @@
-name: Carpool Frontend
-
-routes:
-  - route: "/*"
-    serve: "/index.html"
-    statusCode: 200
-    methods: [GET, HEAD, OPTIONS]
-
-navigationFallback:
-  rewrite: "/index.html"
-  exclude: ["*.{css,scss,js,png,gif,ico,jpg,svg}"]
-
-responseOverrides:
-  404: {
-    "statusCode": 200,
-    "rewrite": "/index.html"
+{
+  "routes": [
+    {
+      "route": "/api/*",
+      "rewrite": "https://vcarpool-dev-api.azurewebsites.net/api/:path*"
+    },
+    {
+      "route": "/assets/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/_next/static/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/_next/*",
+      "/images/*",
+      "/assets/*",
+      "/*.{css,scss,js,json,png,gif,ico,jpg,svg,webp}"
+    ]
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html",
+      "statusCode": 200
+    }
+  },
+  "globalHeaders": {
+    "content-security-policy": "default-src 'self' https://vcarpool-dev-api.azurewebsites.net; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://vcarpool-dev-api.azurewebsites.net"
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".css": "text/css",
+    ".js": "text/javascript",
+    ".html": "text/html",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".svg": "image/svg+xml"
   }
-
-# Enable CORS for the backend API
-cors:
-  allowedOrigins:
-    - https://vcarpool-app-api.azurewebsites.net
-  allowedMethods:
-    - GET
-    - POST
-    - PUT
-    - DELETE
-    - OPTIONS
-  allowedHeaders:
-    - "*"
-  maxAge: 600
-  allowCredentials: true
+}

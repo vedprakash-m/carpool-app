@@ -10,6 +10,7 @@ email-validator
 azure-identity
 azure-keyvault-secrets
 azure-cosmos
+azure-functions
 opencensus-ext-azure
 
 # Testing dependencies

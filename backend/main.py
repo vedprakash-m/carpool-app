@@ -1,3 +1,4 @@
+import azure.functions as func
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.api import api_router
@@ -27,6 +28,13 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 async def root():
     """Health check endpoint."""
     return {"message": "Carpool API is healthy!"}
+
+# Azure Functions entry point
+async def main(req: func.HttpRequest) -> func.HttpResponse:
+    """Azure Functions entry point for FastAPI application."""
+    from azure.functions._http.asgi import AsgiMiddleware
+    asgi_app = AsgiMiddleware(app).handle_async
+    return await asgi_app(req)
 
 if __name__ == "__main__":
     import uvicorn

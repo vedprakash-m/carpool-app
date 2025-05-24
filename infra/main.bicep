@@ -28,20 +28,14 @@ param keyVaultEnableRbacAuthorization bool = true
 
 // Variables
 var resourceToken = '${resourcePrefix}-${environment}'
-var resourceGroupName = '${resourceToken}-rg'
 var appServicePlanName = '${resourceToken}-plan'
 var webAppName = '${resourceToken}-api'
 var keyVaultName = '${resourceToken}-vault'
 var staticWebAppName = '${resourceToken}-frontend'
 var tags = {
-  'azd-env-name': resourceGroupName
+  'azd-env-name': resourceToken
   'application': 'Carpool Management'
   'environment': environment
-}
-
-// Resource Group
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
-  name: resourceGroupName
 }
 
 // App Service Plan

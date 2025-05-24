@@ -1,0 +1,17 @@
+[
+  {
+    "name": "COSMOS_ENDPOINT",
+    "value": "@Microsoft.KeyVault(SecretUri=https://vcarpool-dev-vault.vault.azure.net/secrets/COSMOS-ENDPOINT/)",
+    "slotSetting": false
+  },
+  {
+    "name": "COSMOS_KEY",
+    "value": "@Microsoft.KeyVault(SecretUri=https://vcarpool-dev-vault.vault.azure.net/secrets/COSMOS-KEY/)",
+    "slotSetting": false
+  },
+  {
+    "name": "JWT_SECRET_KEY",
+    "value": "@Microsoft.KeyVault(SecretUri=https://vcarpool-dev-vault.vault.azure.net/secrets/JWT-SECRET-KEY/)",
+    "slotSetting": false
+  }
+]

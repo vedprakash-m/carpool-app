@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>VCarpool App</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f3f4f6;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 90%;
+      width: 400px;
+    }
+    h1 {
+      color: #4f46e5;
+      margin-bottom: 1rem;
+    }
+    p {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+    }
+    .button {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background-color: #4f46e5;
+      color: white;
+      border-radius: 0.25rem;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .button:hover {
+      background-color: #4338ca;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #4f46e5;
+      animation: spin 1s linear infinite;
+      margin: 1rem auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .error {
+      color: #dc2626;
+      margin-top: 1rem;
+      display: none;
+    }
+  </style>
+  <script>
+    // Handle navigation using client-side redirection
+    document.addEventListener('DOMContentLoaded', function() {
+      const container = document.querySelector('.container');
+      const spinner = document.querySelector('.spinner');
+      const error = document.querySelector('.error');
+      const loginButton = document.querySelector('.button');
+      const statusText = document.querySelector('.status');
+      
+      // Function to update UI based on loading state
+      function updateUI(state, message = '') {
+        if (state === 'loading') {
+          spinner.style.display = 'block';
+          error.style.display = 'none';
+          statusText.textContent = 'Loading application...';
+          loginButton.style.display = 'none';
+        } else if (state === 'error') {
+          spinner.style.display = 'none';
+          error.style.display = 'block';
+          error.textContent = message || 'Something went wrong. Please try refreshing the page.';
+          statusText.textContent = 'Unable to load application';
+          loginButton.style.display = 'inline-block';
+        } else if (state === 'ready') {
+          spinner.style.display = 'none';
+          error.style.display = 'none';
+          loginButton.style.display = 'inline-block';
+          statusText.textContent = 'VCarpool Application';
+        }
+      }
+      
+      // Detect if we're at the root and should redirect
+      function handleNavigation() {
+        const path = window.location.pathname;
+        
+        // If we're at the root, redirect to login
+        if (path === '/' || path === '/index.html') {
+          window.location.href = '/login';
+          return;
+        }
+        
+        // If we're already at a valid route, don't do anything
+        if (path.startsWith('/login') || path.startsWith('/dashboard')) {
+          return;
+        }
+        
+        // Otherwise, default to login
+        window.location.href = '/login';
+      }
+      
+      // Try to navigate
+      try {
+        updateUI('loading');
+        setTimeout(() => {
+          handleNavigation();
+          // If we're still here after 3 seconds, show error
+          setTimeout(() => {
+            updateUI('error', 'Navigation timeout. Please try clicking the button below.');
+          }, 3000);
+        }, 500);
+      } catch (e) {
+        console.error('Navigation error:', e);
+        updateUI('error', 'Navigation error: ' + e.message);
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>VCarpool</h1>
+    <p class="status">Loading application...</p>
+    <div class="spinner"></div>
+    <p class="error"></p>
+    <a href="/login" class="button" style="display: none;">Go to Login</a>
+  </div>
+</body>
+</html>

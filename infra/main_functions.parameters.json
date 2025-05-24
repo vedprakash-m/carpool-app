@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourcePrefix": {
+      "value": "vcarpool"
+    },
+    "location": {
+      "value": "westus2"
+    },
+    "environment": {
+      "value": "dev"
+    },
+    "functionAppRuntime": {
+      "value": "python"
+    },
+    "functionAppRuntimeVersion": {
+      "value": "3.12"
+    },
+    "keyVaultEnableRbacAuthorization": {
+      "value": true
+    }
+  }
+}

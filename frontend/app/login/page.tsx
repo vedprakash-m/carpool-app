@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../store/auth';
@@ -15,15 +15,49 @@ export default function LoginPage() {
   const { login, isLoading, error } = useAuthStore();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [clientReady, setClientReady] = useState(false);
+
+  // Ensure the component is only rendered on the client
+  useEffect(() => {
+    setClientReady(true);
+    
+    // Log useful debugging information
+    if (typeof window !== 'undefined') {
+      console.log('Login page loaded');
+      console.log('Current pathname:', window.location.pathname);
+      console.log('Current URL:', window.location.href);
+      
+      // Check if auth store has data
+      try {
+        const authData = localStorage.getItem('auth-storage');
+        console.log('Auth data exists:', !!authData);
+      } catch (e) {
+        console.error('Error checking auth data:', e);
+      }
+    }
+  }, []);
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
+      console.log('Attempting login with:', data.username);
+      setSubmitError(null);
       await login(data);
-      router.push('/dashboard');
+      console.log('Login successful, redirecting to dashboard');
+      // Use window.location for navigation to ensure full page reload
+      window.location.href = '/dashboard';
     } catch (error) {
-      setSubmitError('Invalid email or password');
+      console.error('Login error:', error);
+      setSubmitError('Invalid email or password. Please try again.');
     }
   };
+
+  if (!clientReady) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
+        <p className="text-gray-600">Loading login page...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -91,6 +125,16 @@ export default function LoginPage() {
               </div>
             )}
 
+            {error && !submitError && (
+              <div className="rounded-md bg-red-50 p-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <button
                 type="submit"
@@ -105,4 +149,4 @@ export default function LoginPage() {
       </div>
     </div>
   );
-} 
+}

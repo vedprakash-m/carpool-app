@@ -32,7 +32,7 @@ if ($rgExists -eq "false") {
 }
 
 # Path to Bicep template and parameters file
-$templateFile = Join-Path $PSScriptRoot "main.bicep"
+$templateFile = Join-Path $PSScriptRoot "main_fixed.bicep"
 $parametersFile = Join-Path $PSScriptRoot "main.parameters.json"
 
 # Validate template without deploying if WhatIf is specified
